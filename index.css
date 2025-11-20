@@ -13,3 +13,7 @@ html {
   -ms-overflow-style: none;
   scrollbar-width: none;
 }
+input[type="date"] {
+  color-scheme: dark;
+}
+input[type="date"]::-webkit-calendar-picker-indicator { opacity: 0; }
