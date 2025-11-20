@@ -3,19 +3,19 @@ import { AIResponse, ChatMessage, StyleRecommendation } from "../types";
 
 export const getStyleAdvice = async (history: ChatMessage[]): Promise<AIResponse> => {
   try {
-    if (!process.env.API_KEY) {
-      return { 
-        type: 'conversation', 
-        text: "Error: API Key belum disetting." 
+    if (!(import.meta as any).env.VITE_API_KEY) {
+      return {
+        type: "conversation",
+        text: "Error: API Key belum disetting.",
       };
     }
-    
-    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-    
+
+    const ai = new GoogleGenAI({ apiKey: (import.meta as any).env.VITE_API_KEY });
+
     // Convert history to Gemini format
-    const conversationHistory = history.map(msg => ({
+    const conversationHistory = history.map((msg) => ({
       role: msg.role,
-      parts: [{ text: msg.text }]
+      parts: [{ text: msg.text }],
     }));
 
     const systemInstruction = `
@@ -68,12 +68,12 @@ export const getStyleAdvice = async (history: ChatMessage[]): Promise<AIResponse
     `;
 
     const response = await ai.models.generateContent({
-      model: 'gemini-2.5-flash',
+      model: "gemini-2.5-flash",
       contents: conversationHistory, // Pass full history here
       config: {
         systemInstruction: systemInstruction,
         temperature: 0.7,
-      }
+      },
     });
 
     const responseText = response.text?.trim() || "";
@@ -81,8 +81,8 @@ export const getStyleAdvice = async (history: ChatMessage[]): Promise<AIResponse
     // LOGIKA PARSING YANG LEBIH KUAT
     // Mencari kurung siku pertama '[' dan terakhir ']' untuk mengambil JSON saja
     // Ini mengatasi masalah jika AI membungkus response dengan markdown ```json ... ```
-    const firstBracket = responseText.indexOf('[');
-    const lastBracket = responseText.lastIndexOf(']');
+    const firstBracket = responseText.indexOf("[");
+    const lastBracket = responseText.lastIndexOf("]");
 
     if (firstBracket !== -1 && lastBracket !== -1 && lastBracket > firstBracket) {
       const potentialJson = responseText.substring(firstBracket, lastBracket + 1);
@@ -91,8 +91,8 @@ export const getStyleAdvice = async (history: ChatMessage[]): Promise<AIResponse
         // Validasi apakah ini benar-benar array rekomendasi
         if (Array.isArray(parsed) && parsed.length > 0 && parsed[0].title) {
           return {
-            type: 'recommendation',
-            data: parsed
+            type: "recommendation",
+            data: parsed,
           };
         }
       } catch (e) {
@@ -100,18 +100,17 @@ export const getStyleAdvice = async (history: ChatMessage[]): Promise<AIResponse
         // Jika gagal parse, biarkan return default di bawah (text conversation)
       }
     }
-    
+
     // Default: Percakapan biasa (pertanyaan/interview) atau jika JSON invalid
     return {
-      type: 'conversation',
-      text: responseText
+      type: "conversation",
+      text: responseText,
     };
-    
   } catch (error) {
     console.error("Gemini API Error:", error);
-    return { 
-      type: 'conversation', 
-      text: "Maaf, AI sedang pusing (Error jaringan). Coba lagi ya bro." 
+    return {
+      type: "conversation",
+      text: "Maaf, AI sedang pusing (Error jaringan). Coba lagi ya bro.",
     };
   }
 };
